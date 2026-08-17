@@ -457,6 +457,14 @@ select{
     font-variant-numeric:tabular-nums;
 }
 
+.custom-range-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:12px;
+}
+.custom-range-grid[hidden]{display:none!important}
+
 .measurement-copy{
     margin:0 0 13px;
     color:var(--muted);
@@ -852,6 +860,7 @@ select{
     .panel-head{margin-bottom:14px}
     .panel-title{font-size:20px}
     .setup-grid,.absolute-grid,.relative-grid,.check-grid,.contributors,.model-parameter-grid{grid-template-columns:1fr}
+    .custom-range-grid{grid-template-columns:1fr}
     .fit-data-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
     .setup-grid .field{grid-template-rows:auto 52px}
     .setup-grid .field label{min-height:0;align-items:center}
@@ -938,20 +947,38 @@ select{
                         </div>
                     </div>
                     <div class="field mode-field" id="relativeWidthField">
-                        <label for="relativeWidth">Belt Width</label>
+                        <label for="relativeWidth">Tension Range</label>
                         <select id="relativeWidth">
                             <option value="6">GT2 6mm</option>
                             <option value="9">GT2 9mm</option>
                             <option value="0">Unknown</option>
+                            <option value="custom">Custom Range</option>
                         </select>
                     </div>
                     <div class="field mode-field" id="absoluteWidthField" hidden>
-                        <label for="width">Belt Width</label>
+                        <label for="width">Tension Range</label>
                         <select id="width">
                             <option value="6">GT2 6mm</option>
                             <option value="9">GT2 9mm</option>
                             <option value="0">Unknown</option>
+                            <option value="custom">Custom Range</option>
                         </select>
+                    </div>
+                </div>
+                <div class="custom-range-grid" id="customRangeFields" hidden>
+                    <div class="field">
+                        <label for="customMinTension">Min Tension</label>
+                        <div class="input-shell">
+                            <input id="customMinTension" type="number" min="0" step="0.1" inputmode="decimal" placeholder="9.0" autocomplete="off">
+                            <span class="input-unit">N</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="customMaxTension">Max Tension</label>
+                        <div class="input-shell">
+                            <input id="customMaxTension" type="number" min="0.1" step="0.1" inputmode="decimal" placeholder="18.0" autocomplete="off">
+                            <span class="input-unit">N</span>
+                        </div>
                     </div>
                 </div>
                 <div class="setup-note" id="effectiveDmaxNote">Calculation dmax = Belter calibration reading + belt thickness.</div>
@@ -1058,7 +1085,7 @@ select{
                         <div class="metric"><span id="absoluteTension">0.00</span><span class="unit">N</span></div>
                         <div class="status-line" id="absoluteStatus"><span class="status-dot"></span><span id="absoluteStatusText"></span></div>
                         <div class="absolute-range">
-                            <span>Recommended range</span>
+                            <span id="absoluteRangeLabel">Recommended range</span>
                             <strong id="absoluteRecommendedRange">—</strong>
                         </div>
                     </article>
@@ -1200,7 +1227,7 @@ select{
 let currentLanguage = "en";
 let lastFitStatusMessage = null;
 
-const STATIC_TEXT_EN_TO_ZH = {"BIQU Belter Community-Improved Belt Tension Tool":"BIQU Belter 社区改进版皮带张力工具","BIQU · Community Improved":"BIQU · 社区改进版","Belt Tension Tool":"皮带张力工具","A fast belt tension reference tool for setup, matching and repeat adjustments.":"用于设置、匹配与重复调节的快速皮带张力参考工具。","Compare Belts":"对比两条皮带","Single Belt":"单条皮带","Calculates and compares two belt tensions using the same dmax calibration value.":"使用相同的 dmax 校准值计算并比较两条皮带的张力。","Calibration Required":"需要校准","Calibrate the Belter before measuring belt tension. Uncalibrated measurements should not be used as belt tension results.":"测量皮带张力前，请先校准 Belter。未校准的测量值不应作为皮带张力结果使用。","View Setup & Calibration Guide":"查看设置与校准指南","Input":"输入","Measurement":"测量","Live calculation":"实时计算","Measurement Setup":"测量设置","Set once, confirm as needed":"设置一次，按需确认","Belter Calibration Reading":"Belter 校准读数","required":"必填","Belt Thickness":"皮带厚度","Belt Width":"皮带宽度","Unknown":"未知","Calculation dmax = Belter calibration reading + belt thickness.":"计算 dmax = Belter 校准读数 + 皮带厚度。","Belt Measurements":"皮带测量","High-frequency inputs":"常用输入","Measure both belts using the same calibrated setup. Results update automatically as values change.":"使用同一套已校准设置测量两条皮带。数值变化时，结果会自动更新。","Belt A Reading":"皮带 A 读数","Belt B Reading":"皮带 B 读数","Belt Measurement":"皮带测量","Single belt":"单条皮带","Enter one Belter reading to estimate belt tension using the calibrated setup.":"输入一个 Belter 读数，使用已校准设置估算皮带张力。","Belter Reading d":"Belter 读数 d","Output":"输出","Result":"结果","Ready for measurement":"等待测量","Enter the calibration reading, belt thickness and both belt readings to see the result.":"请输入校准读数、皮带厚度以及两条皮带的读数以查看结果。","Check measurement":"请检查测量值","Balance":"平衡度","· Limit ≤ 10%":"· 限制 ≤ 10%","Tension Range":"张力范围","Belt A":"皮带 A","Belt B":"皮带 B","Estimated Belt Tension":"估算皮带张力","Recommended range":"建议范围","Open Methodology":"开放方法","Community-Improved Methodology":"社区改进方法","This calculator has been improved based on open discussion, experimental measurements and analysis from the 3D printing community.":"本计算器基于 3D 打印社区的公开讨论、实验测量与分析进行了改进。","Nonlinear tension estimation model":"非线性张力估算模型","Tension(N) =":"张力(N) =","dmax = Belter calibration reading + belt thickness":"dmax = Belter 校准读数 + 皮带厚度","Coefficient A":"系数 A","editable":"可编辑","Exponent p":"指数 p","Changes are applied immediately to both Compare Belts and Single Belt calculations.":"修改会立即应用于“对比两条皮带”和“单条皮带”两种计算模式。","Fit Parameters from Test Data":"根据测试数据拟合参数","500–2000 g · 100 g steps · automatic":"500–2000 g · 每 100 g 一档 · 自动拟合","Enter one representative Belter reading for each hanging load. For repeated measurements, enter the mean reading. The fit uses the current Measurement Setup dmax and minimizes tension error in newtons.":"为每个悬挂载荷输入一个具有代表性的 Belter 读数。若进行了多次测量，请输入平均读数。拟合使用当前“测量设置”中的 dmax，并以牛顿为单位最小化张力误差。","Belter reading":"Belter 读数","Enter at least 3 valid readings to fit the model.":"至少输入 3 个有效读数才能拟合模型。","Provided experimental belt deflection measurements used to evaluate the tension model.":"提供了用于评估张力模型的皮带挠度实验测量数据。","Proposed the nonlinear tension estimation model used in this calculator.":"提出了本计算器所使用的非线性张力估算模型。","BIQU thanks the community for helping improve this tool.":"BIQU 感谢社区帮助改进此工具。","Reference":"参考","Important Notice":"重要提示","This calculator provides an estimated belt tension reference value for 3D printer belt adjustment.":"本计算器为 3D 打印机皮带调节提供估算的皮带张力参考值。","Belt material":"皮带材质","Belt thickness":"皮带厚度","Belt length":"皮带长度","Installation conditions":"安装条件","Tool calibration":"工具校准","Actual belt tension may vary. This tool is not a legal metrology instrument.":"实际皮带张力可能存在差异。本工具不是法定计量仪器。"};
+const STATIC_TEXT_EN_TO_ZH = {"BIQU Belter Community-Improved Belt Tension Tool":"BIQU Belter 社区改进版皮带张力工具","BIQU · Community Improved":"BIQU · 社区改进版","Belt Tension Tool":"皮带张力工具","A fast belt tension reference tool for setup, matching and repeat adjustments.":"用于设置、匹配与重复调节的快速皮带张力参考工具。","Compare Belts":"对比两条皮带","Single Belt":"单条皮带","Calculates and compares two belt tensions using the same dmax calibration value.":"使用相同的 dmax 校准值计算并比较两条皮带的张力。","Calibration Required":"需要校准","Calibrate the Belter before measuring belt tension. Uncalibrated measurements should not be used as belt tension results.":"测量皮带张力前，请先校准 Belter。未校准的测量值不应作为皮带张力结果使用。","View Setup & Calibration Guide":"查看设置与校准指南","Input":"输入","Measurement":"测量","Live calculation":"实时计算","Measurement Setup":"测量设置","Set once, confirm as needed":"设置一次，按需确认","Belter Calibration Reading":"Belter 校准读数","required":"必填","Belt Thickness":"皮带厚度","Belt Width":"皮带宽度","Tension Range":"张力范围","Custom Range":"自定义范围","Min Tension":"最小张力","Max Tension":"最大张力","Unknown":"未知","Calculation dmax = Belter calibration reading + belt thickness.":"计算 dmax = Belter 校准读数 + 皮带厚度。","Belt Measurements":"皮带测量","High-frequency inputs":"常用输入","Measure both belts using the same calibrated setup. Results update automatically as values change.":"使用同一套已校准设置测量两条皮带。数值变化时，结果会自动更新。","Belt A Reading":"皮带 A 读数","Belt B Reading":"皮带 B 读数","Belt Measurement":"皮带测量","Single belt":"单条皮带","Enter one Belter reading to estimate belt tension using the calibrated setup.":"输入一个 Belter 读数，使用已校准设置估算皮带张力。","Belter Reading d":"Belter 读数 d","Output":"输出","Result":"结果","Ready for measurement":"等待测量","Enter the calibration reading, belt thickness and both belt readings to see the result.":"请输入校准读数、皮带厚度以及两条皮带的读数以查看结果。","Check measurement":"请检查测量值","Balance":"平衡度","· Limit ≤ 10%":"· 限制 ≤ 10%","Belt A":"皮带 A","Belt B":"皮带 B","Estimated Belt Tension":"估算皮带张力","Recommended range":"建议范围","Open Methodology":"开放方法","Community-Improved Methodology":"社区改进方法","This calculator has been improved based on open discussion, experimental measurements and analysis from the 3D printing community.":"本计算器基于 3D 打印社区的公开讨论、实验测量与分析进行了改进。","Nonlinear tension estimation model":"非线性张力估算模型","Tension(N) =":"张力(N) =","dmax = Belter calibration reading + belt thickness":"dmax = Belter 校准读数 + 皮带厚度","Coefficient A":"系数 A","editable":"可编辑","Exponent p":"指数 p","Changes are applied immediately to both Compare Belts and Single Belt calculations.":"修改会立即应用于“对比两条皮带”和“单条皮带”两种计算模式。","Fit Parameters from Test Data":"根据测试数据拟合参数","500–2000 g · 100 g steps · automatic":"500–2000 g · 每 100 g 一档 · 自动拟合","Enter one representative Belter reading for each hanging load. For repeated measurements, enter the mean reading. The fit uses the current Measurement Setup dmax and minimizes tension error in newtons.":"为每个悬挂载荷输入一个具有代表性的 Belter 读数。若进行了多次测量，请输入平均读数。拟合使用当前“测量设置”中的 dmax，并以牛顿为单位最小化张力误差。","Belter reading":"Belter 读数","Enter at least 3 valid readings to fit the model.":"至少输入 3 个有效读数才能拟合模型。","Provided experimental belt deflection measurements used to evaluate the tension model.":"提供了用于评估张力模型的皮带挠度实验测量数据。","Proposed the nonlinear tension estimation model used in this calculator.":"提出了本计算器所使用的非线性张力估算模型。","BIQU thanks the community for helping improve this tool.":"BIQU 感谢社区帮助改进此工具。","Reference":"参考","Important Notice":"重要提示","This calculator provides an estimated belt tension reference value for 3D printer belt adjustment.":"本计算器为 3D 打印机皮带调节提供估算的皮带张力参考值。","Belt material":"皮带材质","Belt thickness":"皮带厚度","Belt length":"皮带长度","Installation conditions":"安装条件","Tool calibration":"工具校准","Actual belt tension may vary. This tool is not a legal metrology instrument.":"实际皮带张力可能存在差异。本工具不是法定计量仪器。"};
 const STATIC_ATTR_EN_TO_ZH = {"BIQU Logo":"BIQU 标志","Measurement mode":"测量模式","Calibration required":"需要校准","Belter measurement workspace":"Belter 测量工作区","Methodology and notice":"方法说明与提示","Editable calculation model parameters":"可编辑的计算模型参数","Model fitting test data":"模型拟合测试数据","Belter reading at 500 grams":"500 g 载荷下的 Belter 读数","Belter reading at 600 grams":"600 g 载荷下的 Belter 读数","Belter reading at 700 grams":"700 g 载荷下的 Belter 读数","Belter reading at 800 grams":"800 g 载荷下的 Belter 读数","Belter reading at 900 grams":"900 g 载荷下的 Belter 读数","Belter reading at 1000 grams":"1000 g 载荷下的 Belter 读数","Belter reading at 1100 grams":"1100 g 载荷下的 Belter 读数","Belter reading at 1200 grams":"1200 g 载荷下的 Belter 读数","Belter reading at 1300 grams":"1300 g 载荷下的 Belter 读数","Belter reading at 1400 grams":"1400 g 载荷下的 Belter 读数","Belter reading at 1500 grams":"1500 g 载荷下的 Belter 读数","Belter reading at 1600 grams":"1600 g 载荷下的 Belter 读数","Belter reading at 1700 grams":"1700 g 载荷下的 Belter 读数","Belter reading at 1800 grams":"1800 g 载荷下的 Belter 读数","Belter reading at 1900 grams":"1900 g 载荷下的 Belter 读数","Belter reading at 2000 grams":"2000 g 载荷下的 Belter 读数"};
 const STATIC_TEXT_ZH_TO_EN = Object.fromEntries(Object.entries(STATIC_TEXT_EN_TO_ZH).map(([en, zh]) => [zh, en]));
 const STATIC_ATTR_ZH_TO_EN = Object.fromEntries(Object.entries(STATIC_ATTR_EN_TO_ZH).map(([en, zh]) => [zh, en]));
@@ -1283,7 +1310,7 @@ BIQU Belter Community-Improved Calculator
 Calculation model: Tension(N)=A/(dmax-d)^p
 Default fitted parameters: A=23.51, p=1.2283
 Calculation dmax = Belter calibration reading + belt thickness
-Recommended range: 1.5 * belt width to 3.0 * belt width
+Preset range: 1.5 * belt width to 3.0 * belt width; custom range is user-defined
 Relative balance limit: <= 10%
 */
 
@@ -1387,6 +1414,83 @@ function setFitStatus(message, state){
     if(state) status.classList.add(state);
 }
 
+function normalizeFitClipboardCell(value){
+    let raw = String(value == null ? "" : value).trim();
+    if(raw === "") return "";
+
+    if((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))){
+        raw = raw.slice(1, -1).trim();
+    }
+    if(raw === "") return "";
+
+    // Support decimal commas without confusing Excel/Sheets tab-separated columns.
+    if(raw.includes(",") && !raw.includes(".")) raw = raw.replace(",", ".");
+
+    const numeric = Number(raw);
+    return Number.isFinite(numeric) ? String(numeric) : null;
+}
+
+function handleFitDataPaste(event, targetInput){
+    const clipboard = event.clipboardData || window.clipboardData;
+    if(!clipboard) return false;
+
+    const text = clipboard.getData("text");
+    if(!text || (!text.includes("\t") && !text.includes("\n") && !text.includes("\r"))) return false;
+
+    const rows = text.replace(/\r\n?/g, "\n").split("\n").map(function(row){
+        return row.split("\t");
+    });
+    while(rows.length && rows[rows.length - 1].every(function(cell){ return cell.trim() === ""; })) rows.pop();
+    if(!rows.length) return false;
+
+    let cells;
+    if(rows.length > 1 && rows.every(function(row){ return row.length === 1; })){
+        // Accept a vertical 16-cell paste as well as the normal horizontal Excel row.
+        cells = rows.map(function(row){ return row[0]; });
+    }else{
+        // Excel/Sheets copies a horizontal row as tab-separated cells.
+        cells = rows[0];
+    }
+
+    const fitInputs = Array.from(document.querySelectorAll("[data-fit-mass]")).sort(function(a, b){
+        return Number(a.dataset.fitMass) - Number(b.dataset.fitMass);
+    });
+    if(!fitInputs.length) return false;
+
+    // If the copied range includes a row label such as "Average (trimmed 10)",
+    // ignore the first non-numeric cell and map the following 16 values to 500-2000 g.
+    if(cells.length >= fitInputs.length + 1 && normalizeFitClipboardCell(cells[0]) === null){
+        cells = cells.slice(1);
+    }
+
+    if(cells.length >= fitInputs.length){
+        event.preventDefault();
+        for(let i = 0; i < fitInputs.length; i++){
+            const normalized = normalizeFitClipboardCell(cells[i]);
+            fitInputs[i].value = normalized === null ? "" : normalized;
+        }
+        fitModelFromTestData();
+        calculate();
+        return true;
+    }
+
+    // For smaller multi-cell selections, paste sequentially from the focused load.
+    if(cells.length > 1){
+        const startIndex = fitInputs.indexOf(targetInput);
+        if(startIndex < 0) return false;
+        event.preventDefault();
+        for(let i = 0; i < cells.length && startIndex + i < fitInputs.length; i++){
+            const normalized = normalizeFitClipboardCell(cells[i]);
+            fitInputs[startIndex + i].value = normalized === null ? "" : normalized;
+        }
+        fitModelFromTestData();
+        calculate();
+        return true;
+    }
+
+    return false;
+}
+
 function fitModelFromTestData(){
     const calibrationReading = parseFloat(document.getElementById("dmax").value);
     const beltThickness = parseFloat(document.getElementById("beltThickness").value);
@@ -1478,6 +1582,47 @@ function getRange(width){
     return { min: 1.5 * width, max: 3.0 * width };
 }
 
+function getRangeSelection(selectId){
+    const selector = document.getElementById(selectId);
+    if(!selector) return { range:null, isCustom:false, valid:false };
+
+    if(selector.value === "custom"){
+        const min = parseFloat(document.getElementById("customMinTension").value);
+        const max = parseFloat(document.getElementById("customMaxTension").value);
+        const valid = Number.isFinite(min) && Number.isFinite(max) && min >= 0 && max > min;
+        return {
+            range: valid ? { min, max } : null,
+            isCustom: true,
+            valid
+        };
+    }
+
+    const width = parseFloat(selector.value);
+    const range = getRange(width);
+    return { range, isCustom:false, valid:!!range };
+}
+
+function getRangeUnavailableMessage(selection){
+    if(selection && selection.isCustom){
+        return localText(
+            "Enter a valid custom range with Min Tension lower than Max Tension.",
+            "请输入有效的自定义范围，最小张力必须小于最大张力。"
+        );
+    }
+    return localText(
+        "Select a tension range to enable range checking.",
+        "请选择张力范围以启用范围检查。"
+    );
+}
+
+function updateCustomRangeVisibility(){
+    const fields = document.getElementById("customRangeFields");
+    if(!fields) return;
+    const mode = document.getElementById("mode").value;
+    const selector = document.getElementById(mode === "absolute" ? "width" : "relativeWidth");
+    fields.hidden = !selector || selector.value !== "custom";
+}
+
 function rangePosition(tension, range){
     if(!range) return "unknown";
     if(tension < range.min) return "below";
@@ -1530,6 +1675,7 @@ function changeMode(nextMode){
         ? localText("Calculates and compares two belt tensions using the same calibrated setup.", "使用同一套已校准设置计算并比较两条皮带的张力。")
         : localText("Calculates the estimated tension of a single belt using the calibrated setup and nonlinear tension model.", "使用已校准设置和非线性张力模型估算单条皮带的张力。");
 
+    updateCustomRangeVisibility();
     calculate();
 }
 
@@ -1566,7 +1712,7 @@ function renderRelative(data){
         setClassState(rangeCard, "neutral");
         setClassState(rangeStatusText, "neutral");
         rangeStatusText.textContent = localText("Range check unavailable", "无法进行范围检查");
-        recommendedRange.textContent = localText("Select a belt width to enable range checking.", "请选择皮带宽度以启用范围检查。");
+        recommendedRange.textContent = data.rangeUnavailableMessage || localText("Select a tension range to enable range checking.", "请选择张力范围以启用范围检查。");
         return;
     }
 
@@ -1578,7 +1724,9 @@ function renderRelative(data){
 
     setClassState(rangeCard, bothOK ? "good" : "bad");
     setClassState(rangeStatusText, bothOK ? "good" : "bad");
-    recommendedRange.textContent = localText("Recommended ", "建议范围 ") + data.range.min.toFixed(1) + " - " + data.range.max.toFixed(1) + " N";
+    recommendedRange.textContent = (data.isCustomRange
+        ? localText("Custom ", "自定义范围 ")
+        : localText("Recommended ", "建议范围 ")) + data.range.min.toFixed(1) + " - " + data.range.max.toFixed(1) + " N";
 
     tensionA.classList.add(aOK ? "good" : "bad");
     tensionB.classList.add(bOK ? "good" : "bad");
@@ -1611,15 +1759,21 @@ function renderAbsolute(data){
     const card = document.getElementById("absoluteCard");
     const status = document.getElementById("absoluteStatus");
     const statusText = document.getElementById("absoluteStatusText");
+    const rangeLabel = document.getElementById("absoluteRangeLabel");
     const rangeText = document.getElementById("absoluteRecommendedRange");
 
     if(!data.range){
         setClassState(card, "neutral");
         setClassState(status, "neutral");
         statusText.textContent = localText("Reference value only", "仅供参考");
-        rangeText.textContent = localText("No belt width selected", "未选择皮带宽度");
+        rangeLabel.textContent = localText("Tension Range", "张力范围");
+        rangeText.textContent = data.rangeUnavailableMessage || localText("No tension range selected", "未选择张力范围");
         return;
     }
+
+    rangeLabel.textContent = data.isCustomRange
+        ? localText("Custom range", "自定义范围")
+        : localText("Recommended range", "建议范围");
 
     const pos = rangePosition(data.tension, data.range);
     const ok = pos === "within";
@@ -1676,7 +1830,7 @@ function calculate(){
 
     if(mode === "absolute"){
         const d = parseFloat(document.getElementById("reading").value);
-        const width = parseFloat(document.getElementById("width").value);
+        const rangeSelection = getRangeSelection("width");
 
         if(isNaN(calibrationReading) || isNaN(beltThickness) || isNaN(d)){
             showWaiting(localizedPair(
@@ -1715,13 +1869,18 @@ function calculate(){
             ));
             return;
         }
-        renderAbsolute({ tension, range:getRange(width) });
+        renderAbsolute({
+            tension,
+            range:rangeSelection.range,
+            isCustomRange:rangeSelection.isCustom,
+            rangeUnavailableMessage:getRangeUnavailableMessage(rangeSelection)
+        });
         return;
     }
 
     const beltA = parseFloat(document.getElementById("beltA").value);
     const beltB = parseFloat(document.getElementById("beltB").value);
-    const relativeWidth = parseFloat(document.getElementById("relativeWidth").value);
+    const rangeSelection = getRangeSelection("relativeWidth");
 
     if(isNaN(calibrationReading) || isNaN(beltThickness) || isNaN(beltA) || isNaN(beltB)){
         showWaiting(localizedPair(
@@ -1770,7 +1929,9 @@ function calculate(){
         tensionB,
         tensionDifference,
         differencePercent,
-        range:getRange(relativeWidth)
+        range:rangeSelection.range,
+        isCustomRange:rangeSelection.isCustom,
+        rangeUnavailableMessage:getRangeUnavailableMessage(rangeSelection)
     });
 }
 
@@ -1798,10 +1959,19 @@ function wireAutoCalculation(){
             fitModelFromTestData();
             calculate();
         });
+        input.addEventListener("paste", function(event){
+            handleFitDataPaste(event, input);
+        });
     });
 
     ["width","relativeWidth"].forEach(function(id){
-        document.getElementById(id).addEventListener("change", calculate);
+        document.getElementById(id).addEventListener("change", function(){
+            updateCustomRangeVisibility();
+            calculate();
+        });
+    });
+    ["customMinTension","customMaxTension"].forEach(function(id){
+        document.getElementById(id).addEventListener("input", calculate);
     });
     document.querySelectorAll("[data-mode]").forEach(function(button){
         button.addEventListener("click", function(){ changeMode(button.dataset.mode); });
